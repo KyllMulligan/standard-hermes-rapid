@@ -163,6 +163,16 @@ hermes sessions rename ID T Rename a session
 hermes sessions delete ID   Delete a session
 hermes sessions prune       Clean up old sessions (--older-than N days)
 hermes sessions stats       Session store statistics
+
+Session deletion pitfall (easy to miss): `hermes sessions delete <ID>` is interactive and will cancel in non-interactive automation unless confirmation is provided. Use `--yes` (or `-y`) for scripted/batch cleanup.
+
+Pattern-based cleanup workflow:
+1) `hermes sessions list --limit 1000` to inspect candidate sessions.
+2) Keep/delete by explicit rule (e.g., keep previews containing `[Fatal7x]`).
+3) Delete with `hermes sessions delete --yes <ID>`.
+4) Verify with a final `hermes sessions list`.
+
+See `references/session-cleanup-by-pattern.md` for a copy-paste-safe workflow.
 ```
 
 ### Cron Jobs
@@ -178,6 +188,10 @@ hermes cron status          Scheduler status
 ```
 
 Cron script-path rule (easy to miss): when creating jobs that use `script`, the path must be relative to `~/.hermes/scripts/` (example: `backup_hermes_lean.sh`), not an absolute path like `/home/user/.hermes/scripts/backup_hermes_lean.sh`.
+
+Cron delivery target pitfall: `deliver: origin` needs a resolvable gateway origin/thread. For host-maintenance script jobs created from CLI, prefer `deliver: local` unless you explicitly want delivery to a messaging channel.
+
+Cron backup-script customization pattern (durable): keep the cron job stable and patch the script under `~/.hermes/scripts/` to include extra assets. Example for lean backups: stage additional app files into a dedicated subfolder (e.g., `website/`) with guarded copies (`cp ... || true`) so missing optional files don't fail the whole backup run. If source files live under ephemeral paths like `/tmp`, document that they may be skipped after cleanup and prefer a persistent path when possible.
 
 ### Webhooks
 
@@ -689,12 +703,22 @@ schema footprint is zero outside worker processes.
   `show`, `assign`, `link`, `unlink`, `comment`, `complete`, `block`,
   `unblock`, `archive`, `tail`. Less common: `watch`, `stats`, `runs`,
   `log`, `dispatch`, `daemon`, `gc`.
+- **`daemon` is deprecated** in current Hermes builds; use `hermes gateway start`
+  (or ensure your user gateway service is already running). The embedded
+  dispatcher in gateway is what actually picks up ready tasks.
 - **Worker toolset:** `kanban_show`, `kanban_complete`, `kanban_block`,
   `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`.
 - **Dispatcher** runs inside the gateway by default
   (`kanban.dispatch_in_gateway: true`) — reclaims stale claims,
   promotes ready tasks, atomically claims, spawns assigned profiles.
   Auto-blocks a task after ~5 consecutive spawn failures.
+- **Dashboard-first workflow (for tutorial / operations):**
+  1) `hermes kanban init`
+  2) verify board with `hermes kanban boards list` and `hermes kanban stats`
+  3) launch dashboard: `hermes dashboard --host 127.0.0.1 --port 9119`
+  4) verify dashboard health: `curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:9119` (expect `200`)
+  5) if remote, tunnel with `ssh -L 9119:127.0.0.1:9119 <host>` and open local `http://127.0.0.1:9119`
+  (See `references/kanban-dashboard-quickstart.md` for a copy-paste flow.)
 - **Isolation:** board is the hard boundary (workers get
   `HERMES_KANBAN_BOARD` pinned in env); tenant is a soft namespace
   within a board for workspace-path + memory-key isolation.
@@ -793,6 +817,45 @@ and logs — avoids shell-escaping backslashes in bash.
 
 ---
 
+## Local Web UI Bridge to Hermes (dark dashboard pattern)
+
+When a user asks for a lightweight local website that can "talk to Hermes", use this proven pattern:
+
+1. **Serve static UI + local API from one Python server**
+   - Keep `index.html` and `server.py` in one directory.
+   - Implement `POST /hermes` in `server.py` to run:
+     - `hermes chat -q "<message>" -Q`
+   - Return JSON: `{ "reply": "...", "meta": { ... } }`.
+
+2. **Add read-only info endpoints for UI diagnostics**
+   - `GET /servername` → hostname or `SERVER_NAME` env override.
+   - `GET /hermes-info` → provider/model + call counters + token estimates.
+   - Token display can be approximate (e.g., `len(text)/4`) as long as labeled "estimated".
+
+3. **UI interaction pattern that users liked**
+   - Top title from `/servername` (dynamic, not hardcoded).
+   - Center input hides while request is in-flight.
+   - Show animated loading state (spinner + phrase cycle).
+   - Expand output panel during processing, keep expanded briefly after response, then collapse and re-enable input.
+
+4. **Reliability UX pattern**
+   - Add top-right status chip: `online/offline + latency ms`.
+   - Poll `/hermes-info` every few seconds (`cache: no-store`) and update status color + latency.
+   - This does not prevent crashes, but immediately surfaces outages to users.
+
+5. **Styling pattern for "sinceyouarrived"-style backdrop**
+   - Use dark-gray scrolling background text behind main content (`z-index` layering + `pointer-events:none`).
+   - Populate with passive client/server signals (where you are, when you arrived, what you brought).
+   - For long UA/session lines, enforce readability with wrapping controls:
+     - `white-space: pre-wrap;`
+     - `overflow-wrap: anywhere;`
+     - `word-break: break-word;`
+     - generous padding + increased line-height to prevent overlap.
+
+### Pitfalls
+- If the user says text overlaps in the scrolling backdrop, fix legibility first (line-height + inner padding + width bounds) before changing content volume.
+- If ad-hoc server dies after other restarts, relaunch quickly and verify with HTTP 200 checks; for durable uptime, move to `systemd`/`pm2` supervision.
+
 ## Troubleshooting
 
 ### Voice not working
@@ -836,9 +899,17 @@ Common gateway problems:
 - **Gateway dies on SSH logout**: Enable linger: `sudo loginctl enable-linger $USER`
 - **Gateway dies on WSL2 close**: WSL2 requires `systemd=true` in `/etc/wsl.conf` for systemd services to work. Without it, gateway falls back to `nohup` (dies when session closes).
 - **Gateway crash loop**: Reset the failed state: `systemctl --user reset-failed hermes-gateway`
+- **Local demo web servers vanish after restarts/session changes**: do not rely on ad-hoc background processes for anything user-facing. Run the demo server under a supervisor (`systemd --user`, `pm2`, or `supervisord`) and expose a health endpoint + in-page online/offline status indicator.
+
+See `references/local-web-ui-bridge-pattern.md` for a complete local Hermes web bridge pattern (UI + `/hermes` API + status/latency + model/token metadata).
+- **User says "gateway restart stopped my local demo server"**: if the site was launched as an ad-hoc background task (`terminal(background=true)` / one-off `python -m http.server`), treat it as ephemeral and verify immediately:
+  1) health-check endpoint (`curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:<port>`),
+  2) check tracked background processes (`process(action="list")`),
+  3) relaunch if needed.
+  Then harden against recurrence: run the server under a persistent supervisor (`systemd --user`, `pm2`, or `tmux` keepalive) and add a lightweight UI heartbeat (`/health` or existing JSON endpoint ping every few seconds with online/offline + latency badge) so failures are visible instantly.
 
 ### Platform-specific issues
-- **Discord bot silent**: Must enable **Message Content Intent** in Bot → Privileged Gateway Intents.
+- **Discord bot silent**: verify all three: (1) token is set in `~/.hermes/.env` (`DISCORD_BOT_TOKEN`, optionally `DISCORD_TOKEN`), (2) **Message Content Intent** is enabled in Bot → Privileged Gateway Intents, and (3) gateway access policy allows your users/channels (otherwise Hermes logs an allowlist warning and denies unauthorized users).
 - **Slack bot only works in DMs**: Must subscribe to `message.channels` event. Without it, the bot ignores public channels.
 - **Windows-specific issues** (`Alt+Enter` newline, WinError 10106, UTF-8 BOM config, test suite, line endings): see the dedicated **Windows-Specific Quirks** section above.
 
@@ -998,6 +1069,12 @@ Factual guidance about the host OS, user home, cwd, terminal backend, and shell 
 
 Full design notes, the exact emitted strings, and testing pitfalls:
 `references/prompt-builder-environment-hints.md`.
+
+Local web integration recipe (host a simple site, wire `/hermes`, expose `/servername` + `/hermes-info`, and return model/provider + estimated token metadata):
+`references/local-web-chat-bridge.md`.
+
+Background telemetry legibility tuning (slow scroll, wrap policy, spacing for non-overlapping ticker text):
+`references/bg-ticker-legibility.md`.
 
 **Refactor-safety pattern (POSIX-equivalence guard):** when you extract inline logic into a helper that adds Windows/platform-specific behavior, keep a `_legacy_<name>` oracle function in the test file that's a verbatim copy of the old code, then parametrize-diff against it. Example: `tests/tools/test_code_execution_windows_env.py::TestPosixEquivalence`. This locks in the invariant that POSIX behavior is bit-for-bit identical and makes any future drift fail loudly with a clear diff.
 

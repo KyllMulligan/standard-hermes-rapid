@@ -552,6 +552,33 @@ If verification is limited by environment, say exactly what was and was not veri
 
 Never say “done” if the file was not actually written.
 
+## Rapid local hosting loop (for interactive HTML prototypes)
+
+When the user asks to **host** the page and then iterate quickly:
+
+1. Write/update the HTML artifact first.
+2. Start a local server in the artifact directory (background process is fine).
+3. Verify with a local HTTP fetch that expected markers exist (title text, key CSS class/gradient token, etc.).
+4. If the prototype includes JS that calls a backend route (for example `POST /hermes`), verify that route with a real POST request.
+
+### Important limitation
+
+`python -m http.server` is static-only. It will not implement custom JSON endpoints like `/hermes`.
+
+If the page needs request/response behavior, replace static hosting with a tiny custom server (for example `ThreadingHTTPServer` + `SimpleHTTPRequestHandler` subclass) that:
+
+- serves static files normally
+- handles required API routes (e.g. `/hermes`)
+- returns JSON so the output panel in the prototype can render responses
+
+This prevents a common failure mode where the UI looks complete but input/output interactions always fail at runtime.
+
+Reference: `references/local-hosted-chat-prototype.md` (compact recipe + pitfalls for HTML chat-style local demos).
+
+For loading choreography (hide input while pending, show spinner, expand output, hold, then restore), see `references/loading-state-chat-animation-pattern.md`.
+
+For connection telemetry UI (top-right online/offline chip with live latency), model/token meta paneling, and dark ambient scrolling background text driven by runtime stats, see `references/live-status-and-background-ticker-pattern.md`.
+
 ## Final Response Format
 
 Keep final responses short.

@@ -52,6 +52,34 @@ OWNER=$(echo "$OWNER_REPO" | cut -d/ -f1)
 REPO=$(echo "$OWNER_REPO" | cut -d/ -f2)
 ```
 
+### Prerequisite Discovery for "Back up hosted website to GitHub"
+
+When the user asks to add a hosted site to a backup repo, do discovery first instead of guessing paths:
+
+```bash
+# 1) Find active web listeners (look for :80/:443/:8080 etc.)
+ss -ltnp
+
+# 2) Inspect candidate PID(s)
+ps -fp <PID>
+readlink -f /proc/<PID>/cwd
+tr '\0' ' ' </proc/<PID>/cmdline
+
+# 3) Verify website files from the server working directory
+# (expect files like index.html, server.py, assets/, etc.)
+```
+
+If the site directory is not a git repo (common for /tmp-hosted sessions), initialize/attach it explicitly before push:
+
+```bash
+git -C <site_dir> rev-parse --is-inside-work-tree
+# if not a repo, either:
+# - copy files into the target backup repo working tree, OR
+# - git init in <site_dir>, add remote, and push
+```
+
+Also verify GitHub auth availability early (`gh auth status` or `GITHUB_TOKEN`) before promising a push.
+
 ---
 
 ## 1. Cloning Repositories

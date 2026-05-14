@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fatal_Hermes</title>
+  <style>
+    :root {
+      --bg: #000;
+      --panel: #0f0f0f;
+      --panel-border: #2a2a2a;
+      --text: #f4f4f4;
+      --muted: #9a9a9a;
+      --yellow-1: #fff59d;
+      --yellow-2: #ffe066;
+      --yellow-3: #ffcc00;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 24px;
+      padding: 36px 24px 24px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .bg-scroll {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0.5;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 84%, transparent 100%);
+    }
+
+    .bg-lines {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(16px, 1.5vw, 22px);
+      color: #262626;
+      letter-spacing: 0.03em;
+      line-height: 1.8;
+      white-space: pre;
+      word-break: normal;
+      overflow-wrap: normal;
+      text-transform: uppercase;
+      animation: bgUp 85s linear infinite;
+      padding: 16px 24px;
+    }
+
+    #bg-lines { top: 0; }
+    #bg-lines-clone { top: 100%; }
+
+    @keyframes bgUp {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100%); }
+    }
+
+    .app > :not(.bg-scroll) {
+      position: relative;
+      z-index: 2;
+    }
+
+    h1 {
+      margin: 0;
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 21;
+      text-align: center;
+      font-size: clamp(1.4rem, 3.2vw, 2.4rem);
+      letter-spacing: 0.08em;
+      line-height: 1;
+      background: linear-gradient(90deg, var(--yellow-1), var(--yellow-2), var(--yellow-3));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .input-wrap {
+      display: grid;
+      place-items: center;
+      gap: 12px;
+      align-content: center;
+      opacity: 1;
+      max-height: 220px;
+      transform: translateY(0);
+      transition: opacity 360ms ease, max-height 520ms ease, transform 420ms ease;
+      overflow: hidden;
+    }
+
+    .controls {
+      width: min(760px, 92vw);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: #111;
+      color: var(--text);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--yellow-2);
+      box-shadow: 0 0 0 3px rgba(255, 224, 102, 0.15);
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 0 18px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--yellow-2), var(--yellow-3));
+      color: #111;
+    }
+
+    button:hover { filter: brightness(1.06); }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .status-chip {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      left: auto;
+      z-index: 22;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #2c2c2c;
+      background: rgba(10, 10, 10, 0.9);
+      color: #d9d9d9;
+      font-size: 0.82rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      backdrop-filter: blur(4px);
+      transition: border-color 220ms ease, box-shadow 220ms ease;
+      white-space: nowrap;
+    }
+
+    #status-text {
+      min-width: 0;
+      flex: 0 1 auto;
+      text-align: left;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #777;
+      box-shadow: 0 0 0 0 rgba(0,0,0,0);
+      transition: background-color 220ms ease, box-shadow 220ms ease;
+      flex: 0 0 auto;
+    }
+
+    .status-chip.online {
+      border-color: #275d2f;
+      box-shadow: 0 0 0 1px rgba(39, 93, 47, 0.25);
+    }
+
+    .status-chip.online .status-dot {
+      background: #3ddc64;
+      box-shadow: 0 0 10px rgba(61, 220, 100, 0.5);
+    }
+
+    .status-chip.offline {
+      border-color: #6a2b2b;
+      box-shadow: 0 0 0 1px rgba(106, 43, 43, 0.25);
+    }
+
+    .status-chip.offline .status-dot {
+      background: #ff5f5f;
+      box-shadow: 0 0 10px rgba(255, 95, 95, 0.45);
+    }
+
+    .meta {
+      width: min(980px, 96vw);
+      justify-self: center;
+      background: #0b0b0b;
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #d6d6d6;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .meta b { color: var(--yellow-2); }
+
+    .output {
+      width: min(980px, 96vw);
+      justify-self: center;
+      height: clamp(180px, 28vh, 320px);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      transition: height 650ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease;
+      scrollbar-width: thin;
+      scrollbar-color: #ffcc00 #0b0b0b;
+    }
+
+    .output::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .output::-webkit-scrollbar-track {
+      background: #0b0b0b;
+      border-radius: 999px;
+      border: 1px solid #1a1a1a;
+    }
+
+    .output::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #fff59d, #ffe066, #ffcc00);
+      border-radius: 999px;
+      border: 2px solid #0b0b0b;
+      box-shadow: 0 0 8px rgba(255, 224, 102, 0.35);
+    }
+
+    .output::-webkit-scrollbar-thumb:hover {
+      filter: brightness(1.08);
+    }
+
+    .spinner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      color: var(--yellow-2);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 280ms ease, transform 360ms ease;
+      min-height: 24px;
+    }
+
+    .spinner-text {
+      display: inline-block;
+      min-width: 190px;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 180ms ease, transform 220ms ease;
+    }
+
+    .spinner-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--yellow-1), var(--yellow-3));
+      animation: pulse 1s ease-in-out infinite;
+      box-shadow: 0 0 16px rgba(255, 224, 102, 0.45);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.85); opacity: 0.5; }
+      50% { transform: scale(1.25); opacity: 1; }
+    }
+
+    .app.busy .input-wrap {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-14px);
+      pointer-events: none;
+    }
+
+    .app.busy .spinner {
+      display: inline-flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .app.busy .output {
+      height: clamp(360px, 58vh, 640px);
+    }
+
+    .row-user { color: #d9d9d9; }
+    .row-hermes { color: var(--yellow-2); }
+    .row-error { color: #ff7b7b; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="bg-scroll" aria-hidden="true">
+      <div id="bg-lines" class="bg-lines"></div>
+      <div id="bg-lines-clone" class="bg-lines"></div>
+    </div>
+    <div id="status-chip" class="status-chip offline" aria-live="polite">
+      <span class="status-dot"></span>
+      <span id="status-text">Server: checking…</span>
+    </div>
+    <h1 id="server-name">Loading server...</h1>
+    <div id="spinner" class="spinner" aria-live="polite">
+      <span class="spinner-dot"></span>
+      <span id="spinner-text" class="spinner-text">Hermes is thinking...</span>
+    </div>
+
+    <section class="input-wrap">
+      <form id="hermes-form" class="controls" autocomplete="off">
+        <input id="prompt" type="text" placeholder="Send a message to Hermes..." />
+        <button type="submit">Send</button>
+      </form>
+      <div class="hint">Center input sends to /hermes endpoint (if available).</div>
+    </section>
+
+    <section id="meta" class="meta">
+      <div><b>Model:</b> <span id="meta-model">loading...</span></div>
+      <div><b>Provider:</b> <span id="meta-provider">loading...</span></div>
+      <div><b>Calls:</b> <span id="meta-calls">0</span></div>
+      <div><b>Total est. tokens:</b> <span id="meta-total-tokens">0</span></div>
+      <div><b>Last input tokens:</b> <span id="meta-in-tokens">0</span></div>
+      <div><b>Last output tokens:</b> <span id="meta-out-tokens">0</span></div>
+    </section>
+
+    <section id="output" class="output">[ready] output panel initialized.</section>
+  </main>
+
+  <script>
+    const app = document.querySelector('.app');
+    const serverNameEl = document.getElementById('server-name');
+    const form = document.getElementById('hermes-form');
+    const input = document.getElementById('prompt');
+    const output = document.getElementById('output');
+    const spinnerText = document.getElementById('spinner-text');
+    const statusChip = document.getElementById('status-chip');
+    const statusText = document.getElementById('status-text');
+    const bgLines = document.getElementById('bg-lines');
+    const bgLinesClone = document.getElementById('bg-lines-clone');
+    const metaModel = document.getElementById('meta-model');
+    const metaProvider = document.getElementById('meta-provider');
+    const metaCalls = document.getElementById('meta-calls');
+    const metaTotalTokens = document.getElementById('meta-total-tokens');
+    const metaInTokens = document.getElementById('meta-in-tokens');
+    const metaOutTokens = document.getElementById('meta-out-tokens');
+
+    let pendingCooldown = null;
+    let spinnerInterval = null;
+    let spinnerStep = 0;
+    let statusInterval = null;
+    let bgInterval = null;
+    const sessionStart = Date.now();
+    const spinnerPhrases = ['Hermes is thinking...', 'Hermes is reasoning...', 'Hermes is writing...'];
+    const clientSignals = {
+      ua: 'unknown',
+      lang: 'unknown',
+      platform: 'unknown',
+      cores: 'n/a',
+      memory: 'n/a',
+      tz: 'unknown',
+      screen: 'unknown',
+      touch: '0',
+      dnt: 'unknown',
+      online: 'unknown',
+      downlink: 'n/a',
+      battery: 'n/a'
+    };
+
+    async function loadServerName() {
+      try {
+        const res = await fetch('/servername');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const name = (data.servername || '').trim();
+        serverNameEl.textContent = name || 'Unknown Server';
+        document.title = name || 'Server';
+      } catch {
+        serverNameEl.textContent = 'Server Unavailable';
+      }
+    }
+
+    loadServerName();
+    loadClientSignals();
+
+    function updateMeta(meta = {}) {
+      metaModel.textContent = meta.model || 'unknown';
+      metaProvider.textContent = meta.provider || 'unknown';
+      metaCalls.textContent = String(meta.calls ?? 0);
+      metaTotalTokens.textContent = String(meta.total_estimated_tokens ?? 0);
+      metaInTokens.textContent = String(meta.last_input_tokens ?? 0);
+      metaOutTokens.textContent = String(meta.last_output_tokens ?? 0);
+    }
+
+    function formatDuration(ms) {
+      const total = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    async function loadClientSignals() {
+      try {
+        clientSignals.ua = navigator.userAgent || 'unknown';
+        clientSignals.lang = navigator.language || 'unknown';
+        clientSignals.platform = navigator.platform || 'unknown';
+        clientSignals.cores = String(navigator.hardwareConcurrency ?? 'n/a');
+        clientSignals.memory = navigator.deviceMemory ? `${navigator.deviceMemory}GB` : 'n/a';
+        clientSignals.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
+        clientSignals.screen = `${screen.width}x${screen.height}@${window.devicePixelRatio || 1}x`;
+        clientSignals.touch = String(navigator.maxTouchPoints ?? 0);
+        clientSignals.dnt = String(navigator.doNotTrack ?? 'unknown');
+        clientSignals.online = navigator.onLine ? 'online' : 'offline';
+
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && typeof conn.downlink === 'number') {
+          clientSignals.downlink = `${conn.downlink.toFixed(1)}mbps`;
+        }
+
+        if (navigator.getBattery) {
+          const b = await navigator.getBattery();
+          clientSignals.battery = `${Math.round((b.level || 0) * 100)}%${b.charging ? ' charging' : ''}`;
+        }
+      } catch {
+        // best-effort only
+      }
+    }
+
+    function buildBackgroundText() {
+      const now = new Date();
+      const arrivedAt = new Date(sessionStart);
+      const up = formatDuration(Date.now() - sessionStart);
+
+      const ref = document.referrer || 'direct';
+      const cookiesOn = navigator.cookieEnabled ? 'enabled' : 'disabled';
+      const depth = window.screen?.colorDepth ?? 'n/a';
+      const pixelDepth = window.screen?.pixelDepth ?? 'n/a';
+      const langList = (navigator.languages && navigator.languages.length)
+        ? navigator.languages.join(', ')
+        : clientSignals.lang;
+      const uaTrim = clientSignals.ua.length > 180 ? `${clientSignals.ua.slice(0, 180)}...` : clientSignals.ua;
+
+      const lines = [
+        `VISITOR PROFILE   ARRIVED_AT=${arrivedAt.toISOString()}     NOW=${now.toISOString()}     ELAPSED=${up}`,
+        `                 TZ=${clientSignals.tz}     LANG=${clientSignals.lang}     PLATFORM=${clientSignals.platform}`,
+        `                 LANG_LIST="${langList}"`,
+        ``,
+        `DEVICE            USER_AGENT="${uaTrim}"`,
+        `                 SCREEN=${clientSignals.screen}     DPR=${window.devicePixelRatio || 1}`,
+        `                 COLOR_DEPTH=${depth}     PIXEL_DEPTH=${pixelDepth}`,
+        `                 CPU_CORES=${clientSignals.cores}     DEVICE_MEMORY=${clientSignals.memory}     TOUCH_POINTS=${clientSignals.touch}`,
+        ``,
+        `NETWORK           ONLINE=${clientSignals.online}     DOWNLINK=${clientSignals.downlink}`,
+        `                 DNT=${clientSignals.dnt}     COOKIES=${cookiesOn}     BATTERY="${clientSignals.battery}"`,
+        `                 REFERRER="${ref}"`,
+      ];
+
+      return Array(7).fill(lines.join('\n')).join('\n\n');
+    }
+
+    function updateBackgroundTicker() {
+      const text = buildBackgroundText();
+      bgLines.textContent = text;
+      bgLinesClone.textContent = text;
+    }
+
+    function setStatus(online, latencyMs = null) {
+      statusChip.classList.toggle('online', online);
+      statusChip.classList.toggle('offline', !online);
+      if (online && Number.isFinite(latencyMs)) {
+        statusText.textContent = `Server: online • ${Math.round(latencyMs)}ms`;
+      } else if (online) {
+        statusText.textContent = 'Server: online';
+      } else {
+        statusText.textContent = 'Server: offline';
+      }
+    }
+
+    async function pingServer() {
+      const start = performance.now();
+      try {
+        const res = await fetch('/hermes-info', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const latency = performance.now() - start;
+        const data = await res.json();
+        updateMeta(data);
+        setStatus(true, latency);
+      } catch {
+        setStatus(false);
+      }
+    }
+
+    function startStatusMonitor() {
+      if (statusInterval) clearInterval(statusInterval);
+      pingServer();
+      statusInterval = setInterval(pingServer, 3000);
+    }
+
+    function startBackgroundTicker() {
+      if (bgInterval) clearInterval(bgInterval);
+      updateBackgroundTicker();
+      bgInterval = setInterval(updateBackgroundTicker, 1000);
+    }
+
+    async function loadHermesInfo() {
+      try {
+        const res = await fetch('/hermes-info');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        updateMeta(data);
+      } catch {
+        updateMeta({});
+      }
+    }
+
+    loadHermesInfo();
+    startStatusMonitor();
+    startBackgroundTicker();
+
+    function addLine(text, cls = '') {
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = text;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function startSpinnerCycle() {
+      spinnerStep = 0;
+      spinnerText.textContent = spinnerPhrases[spinnerStep];
+      if (spinnerInterval) clearInterval(spinnerInterval);
+      spinnerInterval = setInterval(() => {
+        spinnerStep = (spinnerStep + 1) % spinnerPhrases.length;
+        spinnerText.style.opacity = '0';
+        spinnerText.style.transform = 'translateY(-2px)';
+        setTimeout(() => {
+          spinnerText.textContent = spinnerPhrases[spinnerStep];
+          spinnerText.style.opacity = '1';
+          spinnerText.style.transform = 'translateY(0)';
+        }, 140);
+      }, 1200);
+    }
+
+    function stopSpinnerCycle() {
+      if (spinnerInterval) {
+        clearInterval(spinnerInterval);
+        spinnerInterval = null;
+      }
+      spinnerText.textContent = spinnerPhrases[0];
+      spinnerText.style.opacity = '1';
+      spinnerText.style.transform = 'translateY(0)';
+    }
+
+    function setBusy(isBusy) {
+      if (isBusy) {
+        startSpinnerCycle();
+        app.classList.add('busy');
+        input.disabled = true;
+        form.setAttribute('aria-hidden', 'true');
+      } else {
+        app.classList.remove('busy');
+        input.disabled = false;
+        form.removeAttribute('aria-hidden');
+        input.focus();
+        stopSpinnerCycle();
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (app.classList.contains('busy')) return;
+
+      const message = input.value.trim();
+      if (!message) return;
+
+      if (pendingCooldown) {
+        clearTimeout(pendingCooldown);
+        pendingCooldown = null;
+      }
+
+      addLine(`You: ${message}`, 'row-user');
+      input.value = '';
+      setBusy(true);
+
+      try {
+        const res = await fetch('/hermes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const reply = data.reply ?? JSON.stringify(data);
+        updateMeta(data.meta || {});
+        addLine(`Hermes: ${reply}`, 'row-hermes');
+      } catch (err) {
+        addLine(`Hermes endpoint unavailable: ${err.message}`, 'row-error');
+      } finally {
+        pendingCooldown = setTimeout(() => {
+          setBusy(false);
+          pendingCooldown = null;
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+</html>

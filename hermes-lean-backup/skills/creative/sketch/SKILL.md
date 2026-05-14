@@ -201,6 +201,42 @@ Propose 2-4 named candidates. Let the user pick.
 - Tell the user how to open them: `open sketches/001-calm-editorial/index.html` on macOS, `xdg-open` on Linux, `start` on Windows
 - Keep variants disposable — a sketch that you felt the need to preserve should be promoted into real project code, not curated as an asset
 
+## Single-direction iterative mode (when the user clearly wants one page evolved)
+
+Sometimes the user does **not** want 2-3 variants; they want one live page tuned in rapid passes ("move this", "animate that", "wire this endpoint"). In that case:
+
+1. Build one `index.html` quickly.
+2. Host locally immediately (`python3 -m http.server <port>` or a tiny custom Python server if custom endpoints are needed).
+3. Apply each user tweak as targeted edits (avoid full rewrites once behavior exists).
+4. Verify after each pass with real HTTP calls (`curl` for HTML + endpoint checks).
+
+Use this mode when the user's language is directive and sequential (e.g., "push title up", "add spinner", "hide input until response", "make header dynamic").
+
+### Practical UX pattern for request/response mock chat pages
+
+For "send message → wait for backend → show response" pages, implement a `busy` UI state class on a root container:
+
+- `.app.busy .input-wrap` → fade/slide out + disable pointer/input
+- `.app.busy .output` → increase height with eased transition
+- `.app.busy .spinner` → show animated status
+
+Then on submit:
+
+- set busy `true` before network call
+- render response/error
+- keep expanded state for a short hold (e.g. `setTimeout(..., 5000)`)
+- set busy `false` to restore input
+
+This gives smooth perceived responsiveness without streaming.
+
+### Dynamic server identity header pattern
+
+If user wants a dynamic title/header, expose a tiny endpoint like `GET /servername` from the local server, returning JSON.
+Frontend fetches on load and sets both `<h1>` text and `document.title`.
+Use env override first (`SERVER_NAME`) and fallback to hostname for portability.
+
+See `references/local-live-hermes-bridge.md` for a compact, reusable recipe.
+
 **Typical tool sequence for one variant:**
 
 ```
