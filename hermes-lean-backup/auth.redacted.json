@@ -1,0 +1,10 @@
+{
+  "keys": [
+    "version",
+    "providers",
+    "active_provider",
+    "updated_at",
+    "credential_pool"
+  ],
+  "note": "secrets removed"
+}

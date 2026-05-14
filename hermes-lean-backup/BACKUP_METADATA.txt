@@ -1,0 +1,2 @@
+last_backup_utc=2026-05-14T10:43:59Z
+repo=KyllMulligan/standard-hermes-rapid
