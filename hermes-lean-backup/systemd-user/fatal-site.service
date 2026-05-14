@@ -1,0 +1,14 @@
+[Unit]
+Description=Fatal7x local website server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/tmp/fatal_site
+ExecStart=/usr/bin/python3 /tmp/fatal_site/server.py
+Restart=always
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

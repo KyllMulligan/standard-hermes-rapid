@@ -14,19 +14,19 @@
     Name:      hermes-lean-backup-to-github
     Schedule:  every 720m
     Repeat:    ∞
-    Next run:  2026-05-14T20:31:41.431393-04:00
+    Next run:  2026-05-14T20:31:44.544506-04:00
     Deliver:   origin
     Script:    backup_hermes_lean.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-14T06:46:15.805974-04:00  ok
-    ⚠ Delivery failed: no delivery target resolved for deliver=origin
+    Last run:  2026-05-14T08:31:44.544506-04:00  ok
 
   6885b29b9ecf [active]
     Name:      session-cleanup-keep-fatal7x
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-05-14T14:31:41.434026-04:00
+    Next run:  2026-05-14T14:32:04.366113-04:00
     Deliver:   local
+    Last run:  2026-05-14T08:32:04.366113-04:00  ok
 
   53facabb08c3 [active]
     Name:      gateway-watchdog-log

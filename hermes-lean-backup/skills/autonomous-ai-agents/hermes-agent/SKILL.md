@@ -903,6 +903,7 @@ Common gateway problems:
 
 See `references/local-web-ui-bridge-pattern.md` for a complete local Hermes web bridge pattern (UI + `/hermes` API + status/latency + model/token metadata).
 For scheduled gateway health logging without auto-remediation, see `references/gateway-watchdog-cron-log.md`.
+For a concise restart+verification runbook when gateway is hung and a local site also needs recovery, see `references/gateway-hung-recovery-and-site-restart.md`.
 - **User says "gateway restart stopped my local demo server"**: if the site was launched as an ad-hoc background task (`terminal(background=true)` / one-off `python -m http.server`), treat it as ephemeral and verify immediately:
   1) health-check endpoint (`curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:<port>`),
   2) check tracked background processes (`process(action="list")`),
