@@ -14,11 +14,11 @@
     Name:      hermes-lean-backup-to-github
     Schedule:  every 720m
     Repeat:    ∞
-    Next run:  2026-05-14T21:07:05.659694-04:00
+    Next run:  2026-05-14T22:12:40.691740-04:00
     Deliver:   origin
     Script:    backup_hermes_lean.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-14T08:31:44.544506-04:00  ok
+    Last run:  2026-05-14T09:07:08.929300-04:00  ok
 
   6885b29b9ecf [active]
     Name:      session-cleanup-keep-fatal7x
@@ -32,9 +32,9 @@
     Name:      gateway-watchdog-log
     Schedule:  every 15m
     Repeat:    ∞
-    Next run:  2026-05-14T09:14:05.635315-04:00
+    Next run:  2026-05-14T10:14:11.605161-04:00
     Deliver:   local
     Script:    gateway_watchdog_log.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-14T08:59:05.635315-04:00  ok
+    Last run:  2026-05-14T09:59:11.605161-04:00  ok
 

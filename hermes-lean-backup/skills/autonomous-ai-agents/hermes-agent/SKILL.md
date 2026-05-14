@@ -138,6 +138,28 @@ hermes mcp test NAME        Test connection
 hermes mcp configure NAME   Toggle tool selection
 ```
 
+Direct config pattern (native, least-privilege): when a user asks to wire an MCP server directly in `~/.hermes/config.yaml` and explicitly grant only specific MCP tools, set `mcp_servers.<name>.tools.include`.
+
+Example (AgentMail with only thread-reading actions):
+
+```yaml
+mcp_servers:
+  agentmail:
+    command: npx
+    args: ["-y", "agentmail-mcp"]
+    env:
+      AGENTMAIL_API_KEY: "am_..."
+    tools:
+      include:
+        - list_threads
+        - get_thread
+```
+
+Notes:
+- This is the native Hermes MCP shape (`mcp_servers` top-level).
+- Keep the include list minimal when users ask for explicit granted tools.
+- Restart Hermes (or start a fresh session) after editing config so tool availability reloads.
+
 ### Gateway (Messaging Platforms)
 
 ```
