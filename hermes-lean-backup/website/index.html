@@ -225,6 +225,56 @@
 
     .meta b { color: var(--yellow-2); }
 
+    .model-switch {
+      width: min(980px, 96vw);
+      justify-self: center;
+      display: grid;
+      grid-template-columns: 1fr minmax(220px, 320px) auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: -8px;
+    }
+
+    .model-switch select {
+      width: 100%;
+      background: #111;
+      color: #e6e6e6;
+      border: 1px solid var(--panel-border);
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+    }
+
+    .model-switch input[type="password"] {
+      width: 100%;
+      background: #111;
+      color: #e6e6e6;
+      border: 1px solid var(--panel-border);
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+    }
+
+    .model-switch input[type="password"]:focus {
+      border-color: var(--yellow-2);
+      box-shadow: 0 0 0 3px rgba(255, 224, 102, 0.15);
+      outline: none;
+    }
+
+    .model-switch button {
+      padding: 10px 14px;
+      border-radius: 9px;
+      border: 1px solid #8c731f;
+      background: #17130a;
+      color: #f7dd88;
+      cursor: pointer;
+    }
+
+    .model-switch button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .output {
       width: min(980px, 96vw);
       justify-self: center;
@@ -355,6 +405,12 @@
       <div><b>Last output tokens:</b> <span id="meta-out-tokens">0</span></div>
     </section>
 
+    <section class="model-switch">
+      <select id="model-select"></select>
+      <input id="model-api-key" type="password" placeholder="API key (optional override)" style="display:none" />
+      <button id="apply-model" type="button">Apply Model</button>
+    </section>
+
     <section id="output" class="output">[ready] output panel initialized.</section>
   </main>
 
@@ -375,6 +431,9 @@
     const metaTotalTokens = document.getElementById('meta-total-tokens');
     const metaInTokens = document.getElementById('meta-in-tokens');
     const metaOutTokens = document.getElementById('meta-out-tokens');
+    const modelSelect = document.getElementById('model-select');
+    const modelApiKeyInput = document.getElementById('model-api-key');
+    const applyModelBtn = document.getElementById('apply-model');
 
     let pendingCooldown = null;
     let spinnerInterval = null;
@@ -545,7 +604,70 @@
       }
     }
 
+    function updateApiKeyVisibility() {
+      const needsKey = modelSelect.value === 'duke-litellm' || modelSelect.value === 'codex-main';
+      modelApiKeyInput.style.display = needsKey ? 'block' : 'none';
+      modelApiKeyInput.disabled = !needsKey;
+      if (modelSelect.value === 'duke-litellm') {
+        modelApiKeyInput.placeholder = 'Duke LiteLLM API key (optional override)';
+      } else if (modelSelect.value === 'codex-main') {
+        modelApiKeyInput.placeholder = 'Codex API key (optional override)';
+      }
+      if (!needsKey) modelApiKeyInput.value = '';
+    }
+
+    async function loadModelOptions() {
+      try {
+        const res = await fetch('/model-options', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const options = data.options || [];
+        modelSelect.innerHTML = '';
+        for (const opt of options) {
+          const el = document.createElement('option');
+          el.value = opt.id;
+          el.textContent = opt.label;
+          if (opt.model === (data.current?.model || '') && opt.provider === (data.current?.provider || '')) {
+            el.selected = true;
+          }
+          modelSelect.appendChild(el);
+        }
+        updateApiKeyVisibility();
+      } catch {
+        modelSelect.innerHTML = '<option>Model list unavailable</option>';
+      }
+    }
+
+    modelSelect.addEventListener('change', updateApiKeyVisibility);
+
+    applyModelBtn.addEventListener('click', async () => {
+      const optionId = modelSelect.value;
+      if (!optionId) return;
+      applyModelBtn.disabled = true;
+      const prev = applyModelBtn.textContent;
+      applyModelBtn.textContent = 'Applying...';
+      const apiKey = (optionId === 'duke-litellm' || optionId === 'codex-main') ? modelApiKeyInput.value.trim() : '';
+      try {
+        const res = await fetch('/set-model', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ option_id: optionId, api_key: apiKey }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        updateMeta(data.meta || {});
+        addLine(`[system] model switched to ${data.meta?.model} (${data.meta?.provider})`, 'row-hermes');
+        if (optionId === 'duke-litellm' || optionId === 'codex-main') modelApiKeyInput.value = '';
+      } catch (err) {
+        addLine(`[system] model switch failed: ${err.message}`, 'row-error');
+      } finally {
+        applyModelBtn.disabled = false;
+        applyModelBtn.textContent = prev;
+      }
+    });
+
     loadHermesInfo();
+    loadModelOptions();
     startStatusMonitor();
     startBackgroundTicker();
 

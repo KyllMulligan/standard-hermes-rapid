@@ -193,6 +193,10 @@ Cron delivery target pitfall: `deliver: origin` needs a resolvable gateway origi
 
 Cron backup-script customization pattern (durable): keep the cron job stable and patch the script under `~/.hermes/scripts/` to include extra assets. Example for lean backups: stage additional app files into a dedicated subfolder (e.g., `website/`) with guarded copies (`cp ... || true`) so missing optional files don't fail the whole backup run. If source files live under ephemeral paths like `/tmp`, document that they may be skipped after cleanup and prefer a persistent path when possible.
 
+Backup request triage rule: when a user asks to "run backup now", check existing cron jobs first (`hermes cron list`). If a matching enabled backup job exists, prefer triggering that job (`hermes cron run <job_id>`) over ad-hoc manual git backup steps. This preserves the canonical scripted path and avoids duplicate/drifting workflows. See `references/backup-now-vs-cron-first.md`.
+
+Operational continuity add-on (recommended): back up supervision + automation artifacts alongside app files, not just the app itself. Include user systemd units (for example `~/.config/systemd/user/fatal-site.service`, optional `hermes-gateway.service`), and the exact scripts that implement maintenance behavior (for example `backup_hermes_lean.sh`, watchdog scripts). This preserves restart behavior after host changes and makes restore runs reproducible.
+
 ### Webhooks
 
 ```
@@ -838,12 +842,24 @@ When a user asks for a lightweight local website that can "talk to Hermes", use 
    - Show animated loading state (spinner + phrase cycle).
    - Expand output panel during processing, keep expanded briefly after response, then collapse and re-enable input.
 
-4. **Reliability UX pattern**
+5. **Reliability UX pattern**
    - Add top-right status chip: `online/offline + latency ms`.
    - Poll `/hermes-info` every few seconds (`cache: no-store`) and update status color + latency.
    - This does not prevent crashes, but immediately surfaces outages to users.
 
-5. **Styling pattern for "sinceyouarrived"-style backdrop**
+6. **Model switcher pattern (provider-specific key override)**
+   - For model-picker UIs, support per-option API key override fields (masked password input) only when the selected option needs it.
+   - Pass `{ option_id, api_key }` to a backend endpoint (e.g. `POST /set-model`) and apply override server-side only for allowed options.
+   - Keep `/model-options` responses secret-safe by stripping `api_key` from payloads.
+   - Clear the key field after successful apply; hide/disable it for options that do not need manual key entry.
+
+5. **Provider/model switcher with secure override inputs (when needed)**
+   - If the UI has model options (e.g., Duke LiteLLM), support provider-specific fields that appear only for that option (example: API key input shown only when `duke-litellm` is selected).
+   - Keep secret fields masked (`type=password`) and send them only to the model-switch endpoint (e.g., `POST /set-model`), never via read-only info endpoints.
+   - On the server, accept optional overrides (`api_key`) and apply only for the targeted option; keep `/model-options` responses redacted (never include actual keys).
+   - Clear the input after a successful apply to reduce accidental reuse/exposure.
+
+6. **Styling pattern for "sinceyouarrived"-style backdrop**
    - Use dark-gray scrolling background text behind main content (`z-index` layering + `pointer-events:none`).
    - Populate with passive client/server signals (where you are, when you arrived, what you brought).
    - For long UA/session lines, enforce readability with wrapping controls:
@@ -852,9 +868,24 @@ When a user asks for a lightweight local website that can "talk to Hermes", use 
      - `word-break: break-word;`
      - generous padding + increased line-height to prevent overlap.
 
+6. **Predefined model/provider switcher pattern**
+   - Keep an allowlist in backend code (e.g., `MODEL_OPTIONS=[{id,label,provider,model}, ...]`).
+   - Add `GET /model-options` returning `{options,current}` for frontend dropdown population + preselect.
+   - Add `POST /set-model` accepting `{option_id}` and applying both:
+     - `hermes config set model.provider <provider>`
+     - `hermes config set model.default <model>`
+   - If a preset targets an OpenAI-compatible gateway/custom endpoint, also set `model.base_url` (and `model.api_key` when needed by your setup) as part of the same transaction.
+   - After apply, refresh in-memory state and return `{ok,message,meta}` so UI can update model/provider chip immediately.
+   - Frontend sequence: load options on boot, apply on button click, and append a system line indicating success/failure.
+   - Security: never return raw preset secrets in `GET /model-options`; strip fields like `api_key` from UI payloads.
+
 ### Pitfalls
 - If the user says text overlaps in the scrolling backdrop, fix legibility first (line-height + inner padding + width bounds) before changing content volume.
 - If ad-hoc server dies after other restarts, relaunch quickly and verify with HTTP 200 checks; for durable uptime, move to `systemd`/`pm2` supervision.
+- Model switchers must fail loudly when credentials/provider access are missing. Return actionable error text to UI instead of silently keeping old model.
+- Ensure both chat calls and config-detection calls use the same resolved `HERMES_BIN`; mixed binary paths can make switching appear successful while metadata remains stale/unknown.
+
+Reference implementation details: `references/model-provider-switcher-allowlist.md`.
 
 ## Troubleshooting
 
@@ -878,6 +909,23 @@ When a user asks for a lightweight local website that can "talk to Hermes", use 
    set -a; source ~/.hermes/.env; set +a
    curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/user | jq -r .login
    ```
+
+### Hermes CLI not found from spawned/local web servers
+If you call Hermes from a long-running subprocess (e.g. local HTTP server bridge that shells out to `hermes chat -q ...`) and get:
+- `No such file or directory: 'hermes'`
+- model/provider showing `unknown` because `hermes config` failed in that process
+
+Root cause is usually PATH differences between your interactive shell and the daemon/background process.
+
+Use an explicit binary resolution pattern in code:
+
+```python
+import shutil
+HERMES_BIN = shutil.which("hermes") or "/home/<user>/.local/bin/hermes"
+# then call [HERMES_BIN, "chat", ...] and [HERMES_BIN, "config"]
+```
+
+Also make model/provider detection and chat execution use the **same** resolved binary; otherwise one can work while the other silently reports `unknown`.
 
 ### Changes not taking effect
 - **Tools/skills:** `/reset` starts a new session with updated toolset
@@ -904,11 +952,13 @@ Common gateway problems:
 See `references/local-web-ui-bridge-pattern.md` for a complete local Hermes web bridge pattern (UI + `/hermes` API + status/latency + model/token metadata).
 For scheduled gateway health logging without auto-remediation, see `references/gateway-watchdog-cron-log.md`.
 For a concise restart+verification runbook when gateway is hung and a local site also needs recovery, see `references/gateway-hung-recovery-and-site-restart.md`.
+For ensuring lean backups include website/gateway persistence artifacts (systemd units, scripts, cron snapshot) plus post-push verification, see `references/lean-backup-service-artifacts.md`.
 - **User says "gateway restart stopped my local demo server"**: if the site was launched as an ad-hoc background task (`terminal(background=true)` / one-off `python -m http.server`), treat it as ephemeral and verify immediately:
   1) health-check endpoint (`curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:<port>`),
   2) check tracked background processes (`process(action="list")`),
   3) relaunch if needed.
   Then harden against recurrence: run the server under a persistent supervisor (`systemd --user`, `pm2`, or `tmux` keepalive) and add a lightweight UI heartbeat (`/health` or existing JSON endpoint ping every few seconds with online/offline + latency badge) so failures are visible instantly.
+- **Systemd restart loop with `Address already in use`**: when a service restart fails but the endpoint still responds, check for a rogue/manual process still bound to the port (`ss -ltnp | grep :<port>`), inspect service logs (`journalctl --user -u <service> -n 50 --no-pager`), stop the rogue PID, then restart service. This commonly happens after migrating from ad-hoc `python server.py` to `systemd --user` supervision.
 
 ### Platform-specific issues
 - **Discord bot silent**: verify all three: (1) token is set in `~/.hermes/.env` (`DISCORD_BOT_TOKEN`, optionally `DISCORD_TOKEN`), (2) **Message Content Intent** is enabled in Bot → Privileged Gateway Intents, and (3) gateway access policy allows your users/channels (otherwise Hermes logs an allowlist warning and denies unauthorized users).

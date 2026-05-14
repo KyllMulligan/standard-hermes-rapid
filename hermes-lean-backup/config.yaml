@@ -1,7 +1,8 @@
 model:
   default: gpt-5.3-codex
   provider: openai-codex
-  base_url: https://chatgpt.com/backend-api/codex
+  base_url: https://litellm.oit.duke.edu/v1
+  api_key: test-codex-key
 providers: {}
 fallback_providers: []
 credential_pool_strategies: {}
@@ -347,7 +348,7 @@ approvals:
   timeout: 60
   cron_mode: deny
   mcp_reload_confirm: true
-  destructive_slash_confirm: true
+  destructive_slash_confirm: false
 command_allowlist:
 - stop/restart hermes gateway (kills running agents)
 - script execution via -e/-c flag
