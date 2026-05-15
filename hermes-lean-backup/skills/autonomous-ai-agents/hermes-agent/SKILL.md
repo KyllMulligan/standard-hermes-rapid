@@ -931,6 +931,12 @@ Reference implementation details: `references/model-provider-switcher-allowlist.
    set -a; source ~/.hermes/.env; set +a
    curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/user | jq -r .login
    ```
+6. **Finding the smallest local model for Hermes (LM Studio)**: use a reliability-first selection flow instead of choosing purely by parameter count.
+   - Discover candidates and exact on-disk sizes with `lms ls --llm --variants --json`.
+   - Start local serving and verify API surface: `lms server start` then `GET http://127.0.0.1:1234/v1/models`.
+   - Run at least two deterministic smoke prompts per candidate (e.g., strict echo + simple factual/math) against `/v1/chat/completions`.
+   - Choose the smallest model that passes instruction-following reliably; keep the absolute-smallest model as an optional "minimum footprint" preset if it is flaky.
+   - Wire Hermes only after candidate validation by setting `model.provider`, `model.base_url`, and `model.default` together in one transaction to avoid split-brain config state.
 
 ### Hermes CLI not found from spawned/local web servers
 If you call Hermes from a long-running subprocess (e.g. local HTTP server bridge that shells out to `hermes chat -q ...`) and get:
