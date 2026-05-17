@@ -7,35 +7,35 @@
     Name:      hermes-update-every-6h
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-05-16T12:38:24.809926-04:00
+    Next run:  2026-05-17T00:39:59.029162-04:00
     Deliver:   local
-    Last run:  2026-05-16T06:38:24.809926-04:00  error: RuntimeError: Context length exceeded: max compression attempts (3) reached.
+    Last run:  2026-05-16T18:39:59.029162-04:00  error: RuntimeError: Context length exceeded: max compression attempts (3) reached.
 
   7989f9b18191 [active]
     Name:      hermes-lean-backup-to-github
     Schedule:  every 720m
     Repeat:    ∞
-    Next run:  2026-05-16T22:15:03.994701-04:00
+    Next run:  2026-05-17T10:15:08.127670-04:00
     Deliver:   origin
     Script:    backup_hermes_lean.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-15T22:14:08.041234-04:00  ok
+    Last run:  2026-05-16T10:15:06.987817-04:00  ok
 
   6885b29b9ecf [active]
     Name:      session-cleanup-keep-fatal7x
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-05-16T16:10:03.977691-04:00
+    Next run:  2026-05-16T22:23:41.974674-04:00
     Deliver:   local
-    Last run:  2026-05-16T10:10:03.977691-04:00  error: RuntimeError: Response remained truncated after 3 continuation attempts
+    Last run:  2026-05-16T16:23:41.974674-04:00  error: RuntimeError: Response remained truncated after 3 continuation attempts
 
   53facabb08c3 [active]
     Name:      gateway-watchdog-log
     Schedule:  every 15m
     Repeat:    ∞
-    Next run:  2026-05-16T10:26:03.980139-04:00
+    Next run:  2026-05-16T22:25:08.113814-04:00
     Deliver:   local
     Script:    gateway_watchdog_log.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-16T09:43:33.212732-04:00  ok
+    Last run:  2026-05-16T22:10:08.113814-04:00  ok
 
