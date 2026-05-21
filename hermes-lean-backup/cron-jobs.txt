@@ -7,35 +7,35 @@
     Name:      hermes-update-every-6h
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-05-21T01:58:03.962272-04:00
+    Next run:  2026-05-21T14:24:28.581817-04:00
     Deliver:   local
-    Last run:  2026-05-20T19:58:03.962272-04:00  error: ValueError: Model google/gemma-4-e4b has a context window of 4,096 tokens, which is below the minimum 64,000 required by Hermes Agent.  Choose a model with at least 64K context, or set model.context_length in config.yaml to override.
+    Last run:  2026-05-21T08:24:28.581817-04:00  error: ValueError: Model google/gemma-4-e4b has a context window of 4,096 tokens, which is below the minimum 64,000 required by Hermes Agent.  Choose a model with at least 64K context, or set model.context_length in config.yaml to override.
 
   7989f9b18191 [active]
     Name:      hermes-lean-backup-to-github
     Schedule:  every 720m
     Repeat:    ∞
-    Next run:  2026-05-21T10:20:09.974161-04:00
+    Next run:  2026-05-21T22:20:33.162245-04:00
     Deliver:   origin
     Script:    backup_hermes_lean.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-20T10:19:36.205316-04:00  ok
+    Last run:  2026-05-20T22:20:13.525353-04:00  ok
 
   6885b29b9ecf [active]
     Name:      session-cleanup-keep-fatal7x
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-05-21T01:57:03.855228-04:00
+    Next run:  2026-05-21T14:23:28.472606-04:00
     Deliver:   local
-    Last run:  2026-05-20T19:57:03.855228-04:00  error: RuntimeError: Response remained truncated after 3 continuation attempts
+    Last run:  2026-05-21T08:23:28.472606-04:00  error: RuntimeError: Response remained truncated after 3 continuation attempts
 
   53facabb08c3 [active]
     Name:      gateway-watchdog-log
     Schedule:  every 15m
     Repeat:    ∞
-    Next run:  2026-05-20T22:28:09.949633-04:00
+    Next run:  2026-05-21T10:24:33.117326-04:00
     Deliver:   local
     Script:    gateway_watchdog_log.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-05-20T22:13:09.949633-04:00  ok
+    Last run:  2026-05-21T10:09:33.117326-04:00  ok
 
