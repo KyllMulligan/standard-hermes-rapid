@@ -7,35 +7,35 @@
     Name:      hermes-update-every-6h
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-06-04T03:46:48.256259-04:00
+    Next run:  2026-06-04T15:59:53.491806-04:00
     Deliver:   local
-    Last run:  2026-06-03T21:46:48.256259-04:00  ok
+    Last run:  2026-06-04T09:59:53.491806-04:00  ok
 
   7989f9b18191 [active]
     Name:      hermes-lean-backup-to-github
     Schedule:  every 720m
     Repeat:    ∞
-    Next run:  2026-06-04T10:47:50.904987-04:00
+    Next run:  2026-06-04T22:47:56.064122-04:00
     Deliver:   origin
     Script:    backup_hermes_lean.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-06-03T10:46:52.623263-04:00  ok
+    Last run:  2026-06-03T22:47:54.405667-04:00  ok
 
   6885b29b9ecf [active]
     Name:      session-cleanup-keep-fatal7x
     Schedule:  every 360m
     Repeat:    ∞
-    Next run:  2026-06-04T03:21:32.552405-04:00
+    Next run:  2026-06-04T15:32:29.406109-04:00
     Deliver:   local
-    Last run:  2026-06-03T21:21:32.552405-04:00  ok
+    Last run:  2026-06-04T09:32:29.406109-04:00  ok
 
   53facabb08c3 [active]
     Name:      gateway-watchdog-log
     Schedule:  every 15m
     Repeat:    ∞
-    Next run:  2026-06-03T23:02:51.519154-04:00
+    Next run:  2026-06-04T11:00:56.059337-04:00
     Deliver:   local
     Script:    gateway_watchdog_log.sh
     Mode:      no-agent (script stdout delivered directly)
-    Last run:  2026-06-03T22:47:51.519154-04:00  ok
+    Last run:  2026-06-04T10:45:56.059337-04:00  ok
 

@@ -1,0 +1,155 @@
+{
+  "jobs": [
+    {
+      "id": "c841d26f6901",
+      "name": "hermes-update-every-6h",
+      "prompt": "Update Hermes Agent on this machine by running `hermes update`. After the command finishes, report whether it succeeded and include the command output summary. If the update fails, include the error and likely cause.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 360,
+        "display": "every 360m"
+      },
+      "schedule_display": "every 360m",
+      "repeat": {
+        "times": null,
+        "completed": 82
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-14T06:32:23.761517-04:00",
+      "next_run_at": "2026-06-04T09:53:07.783712-04:00",
+      "last_run_at": "2026-06-04T03:53:07.783712-04:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    },
+    {
+      "id": "7989f9b18191",
+      "name": "hermes-lean-backup-to-github",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "backup_hermes_lean.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 720,
+        "display": "every 720m"
+      },
+      "schedule_display": "every 720m",
+      "repeat": {
+        "times": null,
+        "completed": 45
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-14T06:40:35.424004-04:00",
+      "next_run_at": "2026-06-04T10:47:54.405667-04:00",
+      "last_run_at": "2026-06-03T22:47:54.405667-04:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    },
+    {
+      "id": "6885b29b9ecf",
+      "name": "session-cleanup-keep-fatal7x",
+      "prompt": "Every run, delete all Hermes sessions whose preview/title line does NOT contain the exact marker [Fatal7x]. Keep sessions that do contain [Fatal7x].\n\nDo this non-interactively and safely:\n1) Run: hermes sessions list --limit 1000\n2) Parse session IDs from the rightmost ID column (pattern like YYYYMMDD_HHMMSS_hex).\n3) For each session line, if the line does not contain [Fatal7x], delete it with: hermes sessions delete --yes <ID>\n4) Print a concise summary: kept count, deleted count, and deleted IDs.\n5) Verify by running hermes sessions list --limit 1000 and print the final remaining table.\n\nIf no deletions are needed, print 'No sessions deleted; all matched keep rule.'",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 360,
+        "display": "every 360m"
+      },
+      "schedule_display": "every 360m",
+      "repeat": {
+        "times": null,
+        "completed": 82
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-14T08:26:24.873515-04:00",
+      "next_run_at": "2026-06-04T09:27:58.721269-04:00",
+      "last_run_at": "2026-06-04T03:27:58.721269-04:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": [
+        "terminal"
+      ],
+      "workdir": null
+    },
+    {
+      "id": "53facabb08c3",
+      "name": "gateway-watchdog-log",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "gateway_watchdog_log.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 15,
+        "display": "every 15m"
+      },
+      "schedule_display": "every 15m",
+      "repeat": {
+        "times": null,
+        "completed": 1922
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-14T08:28:29.822402-04:00",
+      "next_run_at": "2026-06-04T07:39:17.635945-04:00",
+      "last_run_at": "2026-06-04T07:24:17.635945-04:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    }
+  ],
+  "updated_at": "2026-06-04T07:24:17.636106-04:00"
+}
