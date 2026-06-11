@@ -1,9 +1,9 @@
 {
-  "last_report_path": "/rapiduser/.hermes/logs/curator/20260604-112817",
-  "last_run_at": "2026-06-04T11:28:17.651900+00:00",
-  "last_run_duration_seconds": 0.463857,
+  "last_report_path": "/rapiduser/.hermes/logs/curator/20260611-114834",
+  "last_run_at": "2026-06-11T11:48:34.436962+00:00",
+  "last_run_duration_seconds": 0.485423,
   "last_run_summary": "auto: no changes; llm: skipped (no candidates)",
   "last_run_summary_shown_at": "2026-05-14T10:29:54.458324+00:00",
   "paused": false,
-  "run_count": 4
+  "run_count": 5
 }
